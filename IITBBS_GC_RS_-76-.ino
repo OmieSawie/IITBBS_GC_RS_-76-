@@ -64,6 +64,28 @@ Serial.begin(9600);
 
 	tft.fillScreen(GROUNDCOLOR);
 	tft.fillRect(0,0,128,32,SKYCOLOR);
+
+	//This is the start screen
+	bool start=0;
+	print_text(10,40,"A WALK IN",2,0xff0000);
+	print_text(5,60," THE PARK ",2,0xff0000);
+	print_text(20,90,"Whip to start",1,0xff0000);
+	while(!start){
+		Wire.beginTransmission(ADXL345);
+		Wire.write(0x32);
+		Wire.endTransmission(false);
+		Wire.requestFrom(ADXL345, 6, true);
+
+		Y_out = ( Wire.read() | Wire.read() << 8);
+
+		if(Y_out<-200){
+			start=1;	//Wait for a whip to start
+		}
+	}
+
+	tft.fillScreen(GROUNDCOLOR);
+	tft.fillRect(0,0,128,32,SKYCOLOR);
+
 }
 
 
@@ -133,7 +155,7 @@ class Layer {
 			}
 
 			if(treeCenter_x > 44  &&  treeCenter_x < 84 && treeCenter_y > 90){
-				gameOver("You hit a      tree!");
+				gameOver("  You hit a    tree!");
 			}
 		}
 		
@@ -151,14 +173,15 @@ class Layer {
 			/* uint8_t puddleCenter_x = layerCenter_x+pos_z/2; */
 			this->puddleCenter_x = center_x + obstaclePositions_x[i]*pos_z/2;
 			this->puddleCenter_y = center_y+pos_z/2 + 5;
+			this->playerCenter_y = playerCenterG_y;
 			if(pos_z>30 && pos_z<105){
 				tft.fillCircle(puddleCenter_x,puddleCenter_y,pos_z/7,ST77XX_BLUE);
 				tft.fillCircle(puddleCenter_x,puddleCenter_y-pos_z/3,pos_z/20,0xFFA500);
 			}
 
 			//Check for collisions b/w the player and the pussle also check for contace b/w the orange and the player to obtain bonus points
-			if(puddleCenter_x > 44  &&  puddleCenter_x < 84  && puddleCenter_y > 100){
-				if(puddleCenter_y>100 && playerCenter_y > 80){
+			if(puddleCenter_x > 44  &&  puddleCenter_x < 84 && puddleCenter_y>95 ){
+				if(puddleCenter_y>95 && playerCenter_y > 85){
 					gameOver("You slipped in a puddle!");		//If you hit the puddle
 				}else{
 					bonus+=1;		//If you eat an orange
@@ -169,7 +192,7 @@ class Layer {
 		}
 		
 		//Clear the above made puddle and orange after screen refresh
-		void clearPuddlek(uint8_t i){
+		void clearPuddle(uint8_t i){
 			if(pos_z>30 && pos_z<110){
 				tft.fillCircle(puddleCenter_x,puddleCenter_y,pos_z/7,GROUNDCOLOR);
 				tft.fillCircle(puddleCenter_x,puddleCenter_y-pos_z/3,pos_z/20,GROUNDCOLOR);
@@ -239,8 +262,8 @@ void loop() {
 
 	//The following loop takes care of rendering, deletion and re-rendering of all the components in the layer object
 	for(uint8_t i=0; i<2; i++){
-		layers[i].clearTree((2*i)%3);
-		layers[i].clearPuddlek((5*i+2)%3);
+		layers[i].clearTree((5*i)%3);
+		layers[i].clearPuddle((5*i+2)%3);
 		layers[i].clearLayer();
 		layers[i].clearPlayer();
 		layers[i].pos_z = layers[i].pos_z + layers[i].pos_z/40 + 2;
